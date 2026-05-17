@@ -1,1 +1,31 @@
-Your proposal goes here!
+Team members:
+  * Saul Bolanos
+  * Ellen Ouyang
+  * Gerardo Deanda
+  * AI Assisted
+
+Language Name: TADA (Text Adventure Developer Assist)
+
+Language Description: This DSL helps game designers create their own text-based game using this language's tools. It solves the issue of worrying about how to create a framework for your text based adventure. As in creating the tools to make your masterpiece, with this language, you have all of the tools needed; you simply just need the imagination to use them. A DSL streamlines the process of creating a text-based game.
+
+Example: 
+  * create-room(name, type, size, description, items, direction)
+      * add-items-room(room, item1, item2, item3...)
+      * add-room(room-name, room-coordinate, room-description)
+  * create-npc(type, name, age, race, sex/gender, description, dialogue)
+    * add-dialogue(npc, questionA, answerA1, answerA2,...)
+  * create-action(character, room, hp, description) //This will allow us to create a list of actions for reference
+
+create-room creates the room depending on the parameters given to the function, it outputs the description using the given description as well as anyhting else related to the room: "A large dark, humid room with a sword surrounded by hot coals in the center.", if the sword was the item and was changed to an axe then sword would be replaced with the word axe.
+add-items-room adds items to the room with room being the target, and the following items go into the designated room
+add-room-direction adds exits to the room, similar to items, except instead of items added, there are exits.
+create-npc creates an NPC and labels it with the inputted type and characteristics.
+add-dialogue adds dialogue to the NPC with the inputted dialogue options
+
+AI policy: We intend to use AI to debug, brainstorm, and assist in writing code. We will be conservative with the use of AI code, mainly as a last resort if we cannot implement the desired function after a considerable amount of time trying to implement it ourselves.
+
+Checkpoint 1 Commitments: We will have the lexer, parser, main, expander, and an end-to-end example implemented for our first checkpoint.
+
+Language Goals: We hope the language will have functions that allow you to create and keep track of buildings, dungeons, npcs, items, and events. You will be able to call functions and set attributes for each thing, you will also be able to give each NPC dialogue, and each building exits. We want the language to serve as tools to create a text based game.
+
+"YAYAYAYA" - Ellen is showing Gerardo how to use Git (: 
