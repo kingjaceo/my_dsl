@@ -28,4 +28,3 @@ Checkpoint 1 Commitments: We will have the lexer, parser, main, expander, and an
 
 Language Goals: We hope the language will have functions that allow you to create and keep track of buildings, dungeons, npcs, items, and events. You will be able to call functions and set attributes for each thing, you will also be able to give each NPC dialogue, and each building exits. We want the language to serve as tools to create a text based game.
 
-"YAYAYAYA" - Ellen is showing Gerardo how to use Git (: 

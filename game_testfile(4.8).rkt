@@ -1,0 +1,179 @@
+#lang racket
+ 
+;;; ============================================================
+;;;  Test suite for the Text Adventure DSL
+;;;  Run this file in DrRacket — results print to the REPL.
+;;; ============================================================
+ 
+(require "game_tokenizer.rkt"
+         "game_parser.rkt"
+         "game_printer.rkt"
+         rackunit)
+ 
+;; ─────────────────────────────────────────────────────────────
+;; Helpers
+;; ─────────────────────────────────────────────────────────────
+ 
+;; Run the full pipeline on a source string
+;; Returns the interpreted world (list of section hashes)
+(define (run src)
+  (interpret-tree (parse (make-tokenizer src))))
+ 
+;; Pull one section out of the world by type name
+(define (get-section world name)
+  (findf (λ (s) (string=? (hash-ref s "type") name)) world))
+ 
+;; Pull one entry out of a section by id value
+(define (get-entry section id)
+  (findf (λ (e) (equal? (hash-ref e "id" #f) id))
+         (hash-ref section "entries" '())))
+ 
+;; ─────────────────────────────────────────────────────────────
+;; Test sources
+;; ─────────────────────────────────────────────────────────────
+ 
+(define simple-source #<<END
+create_room: {
+  {
+    id: start_room
+    name: "Dark Cell"
+    description: "Cold and dark."
+    items: [rusty_key, torch]
+  }
+  {
+    id: courtyard
+    name: "Castle Courtyard"
+    description: "Blinding sunlight."
+    exits: {
+      south: start_room
+      east: tower
+    }
+  }
+}
+create_items: {
+  {
+    id: rusty_key
+    name: "Rusty Key"
+    description: "An old key."
+    takeable: true
+  }
+}
+create_events: {
+  {
+    condition: "player_has_item(rusty_key)"
+    action: "unlock_door()"
+    message: "The key fits!"
+  }
+}
+create_actions: {
+}
+END
+)
+ 
+;; Minimal source — one section, one entry, one field
+(define minimal-source #<<END
+create_room: {
+  {
+    id: lobby
+    name: "Lobby"
+  }
+}
+END
+)
+ 
+;; Empty section — no entries at all
+(define empty-section-source #<<END
+create_actions: {
+}
+END
+)
+ 
+;; ─────────────────────────────────────────────────────────────
+;; Tests
+;; ─────────────────────────────────────────────────────────────
+ 
+(define world (run simple-source))
+ 
+;; ── Section structure ────────────────────────────────────────
+(test-case "world has 4 sections"
+  (check-equal? (length world) 4))
+ 
+(test-case "section names are correct"
+  (check-not-false (get-section world "create_room"))
+  (check-not-false (get-section world "create_items"))
+  (check-not-false (get-section world "create_events"))
+  (check-not-false (get-section world "create_actions")))
+ 
+;; ── Room entries ─────────────────────────────────────────────
+(define rooms (get-section world "create_room"))
+ 
+(test-case "create_room has 2 entries"
+  (check-equal? (length (hash-ref rooms "entries")) 2))
+ 
+(test-case "start_room fields are correct"
+  (define entry (get-entry rooms "start_room"))
+  (check-equal? (hash-ref entry "name")        "Dark Cell")
+  (check-equal? (hash-ref entry "description") "Cold and dark."))
+ 
+(test-case "start_room items is a list"
+  (define entry (get-entry rooms "start_room"))
+  (check-equal? (hash-ref entry "items") '("rusty_key" "torch")))
+ 
+(test-case "courtyard exits is a nested hash"
+  (define entry  (get-entry rooms "courtyard"))
+  (define exits  (hash-ref entry "exits"))
+  (check-true   (hash? exits))
+  (check-equal? (hash-ref exits "south") "start_room")
+  (check-equal? (hash-ref exits "east")  "tower"))
+ 
+;; ── Item entries ─────────────────────────────────────────────
+(define items (get-section world "create_items"))
+ 
+(test-case "create_items has 1 entry"
+  (check-equal? (length (hash-ref items "entries")) 1))
+ 
+(test-case "rusty_key fields are correct"
+  (define entry (get-entry items "rusty_key"))
+  (check-equal? (hash-ref entry "name")        "Rusty Key")
+  (check-equal? (hash-ref entry "takeable")    "true"))
+ 
+;; ── Event entries ────────────────────────────────────────────
+(define events (get-section world "create_events"))
+ 
+(test-case "create_events has 1 entry"
+  (check-equal? (length (hash-ref events "entries")) 1))
+ 
+(test-case "event fields are correct"
+  (define entry (car (hash-ref events "entries")))
+  (check-equal? (hash-ref entry "action")  "unlock_door()")
+  (check-equal? (hash-ref entry "message") "The key fits!"))
+ 
+;; ── Empty section ────────────────────────────────────────────
+(test-case "empty section has 0 entries"
+  (define w (run empty-section-source))
+  (define s (get-section w "create_actions"))
+  (check-equal? (length (hash-ref s "entries")) 0))
+ 
+;; ── Minimal source ───────────────────────────────────────────
+(test-case "minimal source parses correctly"
+  (define w     (run minimal-source))
+  (define rooms (get-section w "create_room"))
+  (define entry (get-entry rooms "lobby"))
+  (check-equal? (hash-ref entry "name") "Lobby"))
+ 
+;; ── Printer smoke test ───────────────────────────────────────
+(test-case "printer runs without error"
+  (check-not-exn
+    (λ () (with-output-to-string (λ () (print-world world))))))
+ 
+(test-case "printer output contains section name"
+  (define out (with-output-to-string (λ () (print-world world))))
+  (check-true (string-contains? out "create_room")))
+ 
+(test-case "printer output contains id wrapper"
+  (define out (with-output-to-string (λ () (print-world world))))
+  (check-true (string-contains? out "{id:start_room:")))
+ 
+;; ─────────────────────────────────────────────────────────────
+(displayln "All tests passed!")
+ 

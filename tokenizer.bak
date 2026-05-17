@@ -1,0 +1,18 @@
+#lang br/quicklang
+(require brag/support)
+
+(define (make-tokenizer port)
+  (string-split (string-downcase str)))
+
+
+(define verbs    '("move" "take" "talk" "examine" "enter" "exit" "pickup"))
+(define articles '("a" "an" "the"))   
+(define preps    '("backward" "forward" "right" "left" "into" "onto" "with" "at" "on"))
+
+(define (verb? w)    (member w verbs))
+;; articles added via AI's suggestion because they'd potentially get detected as a noun  
+(define (article? w) (member w articles))
+(define (prep? w)    (member w preps))
+(define (noun? w)    (not (or (verb? w) (article? w) (prep? w))))
+
+(provide make-tokenizer)

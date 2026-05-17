@@ -28,7 +28,3 @@
   next-token)   ; <-- make-tokenizer returns the thunk
 
 (provide make-tokenizer)
-
-;; from/to"{" "}"
-
-;; "[" (token 'LBracket leme

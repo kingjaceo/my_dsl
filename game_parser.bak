@@ -1,0 +1,60 @@
+ #lang racket
+(require brag/support
+         "grammar.rkt")
+ 
+(provide parse interpret-tree)
+ 
+(define (parse token-thunk)
+  (brag:parse #f token-thunk))
+ 
+(define (stx->list stx) (syntax->list stx))
+(define (stx->val  stx) (syntax->datum stx))
+ 
+;; ── interpret-tree ───────────────────────────────────────────
+(define (interpret-tree tree)
+  (match (stx->list tree)
+    [`(program ,sections ...)
+     (map interp-section sections)]))
+ 
+(define (interp-section sec)
+  (match (stx->list sec)
+    ;; section : SECTION LBRACE entry* RBRACE
+    [`(section ,name ,_lb ,entries ... ,_rb)
+     (hash "type"    (stx->val name)
+           "entries" (map interp-entry entries))]))
+ 
+(define (interp-entry entry)
+  (match (stx->list entry)
+    ;; entry : LBRACE field+ RBRACE
+    [`(entry ,_lb ,fields ... ,_rb)
+     (define h (make-hash))
+     (for ([f fields])
+       (define kv (interp-field f))
+       (hash-set! h (car kv) (cadr kv)))
+     h]))
+ 
+(define (interp-field f)
+  (match (stx->list f)
+ 
+    ;; KEY scalar-val
+    [`(field ,key (scalar-val ,val))
+     (list (stx->val key) (stx->val val))]
+ 
+    ;; KEY list-val
+    [`(field ,key (list-val ,_lb (list-items ,vals ...) ,_rb))
+     (list (stx->val key) (map stx->val vals))]
+ 
+    ;; KEY nested-block  →  LBRACE field+ RBRACE
+    [`(field ,key (nested-block ,_lb ,sub-fields ... ,_rb))
+     (define sub (make-hash))
+     (for ([sf sub-fields])
+       (define kv (interp-field sf))
+       (hash-set! sub (car kv) (cadr kv)))
+     (list (stx->val key) sub)]
+ 
+    ;; KEY alone
+    [`(field ,key)
+     (list (stx->val key) "")]
+ 
+    [_ (list "?" "?")]))
+ 
